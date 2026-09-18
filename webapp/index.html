@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>iPhone Calendar Rescue</title>
+<meta name="description" content="Recover the calendar from an iPhone backup, entirely inside your own browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#EEF3F4; --surface:#FFFFFF; --surface-2:#F6FAFA;
+  --ink:#101A1D; --muted:#56696F; --line:#D2DEE0;
+  --accent:#0F5D6B; --accent-ink:#FFFFFF; --accent-soft:#DDEEF0;
+  --ok:#2C6E4F; --warn:#8A5A12; --danger:#9B2F2F;
+  --shadow:0 1px 2px rgba(16,26,29,.06), 0 8px 24px -12px rgba(16,26,29,.18);
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  --body:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1315; --surface:#151F22; --surface-2:#1B262A;
+    --ink:#E6EEF0; --muted:#8FA3A9; --line:#243134;
+    --accent:#57C4D6; --accent-ink:#06171B; --accent-soft:#11272D;
+    --ok:#6FCB9A; --warn:#D9A05B; --danger:#E08585;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1315; --surface:#151F22; --surface-2:#1B262A;
+  --ink:#E6EEF0; --muted:#8FA3A9; --line:#243134;
+  --accent:#57C4D6; --accent-ink:#06171B; --accent-soft:#11272D;
+  --ok:#6FCB9A; --warn:#D9A05B; --danger:#E08585;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:var(--body); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  padding-block:clamp(28px,6vw,64px); padding-left:20px; padding-right:20px;
+}
+.wrap{max-width:720px; margin:0 auto}
+h1,h2,h3{font-family:var(--display); font-weight:600; text-wrap:balance; margin:0}
+h1{font-size:clamp(30px,5.5vw,42px); line-height:1.12; letter-spacing:-.01em}
+h2{font-size:20px; line-height:1.25}
+h3{font-size:16px; font-family:var(--body); font-weight:600}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{
+  font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:14px;
+}
+.lede{font-size:17px; color:var(--muted); margin-top:14px; max-width:60ch}
+header{margin-bottom:28px}
+
+/* privacy banner ------------------------------------------------------- */
+.privacy{
+  display:flex; gap:12px; align-items:flex-start;
+  background:var(--accent-soft); border:1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius:10px; padding:14px 16px; margin-bottom:22px;
+}
+.privacy svg{flex:none; margin-top:2px; color:var(--accent)}
+.privacy p{font-size:14.5px}
+.privacy strong{font-weight:600}
+
+/* drop zone ------------------------------------------------------------ */
+.drop{
+  background:var(--surface); border:2px dashed var(--line); border-radius:14px;
+  padding:clamp(26px,5vw,42px) 24px; text-align:center;
+  transition:border-color .15s ease, background .15s ease;
+}
+.drop.over{border-color:var(--accent); background:var(--accent-soft)}
+.drop h2{margin-bottom:8px}
+.drop .hint{color:var(--muted); font-size:14.5px; margin-bottom:22px}
+.buttons{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+button{font:inherit; cursor:pointer; border-radius:9px; border:1px solid transparent; transition:.15s ease}
+button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.btn-primary{background:var(--accent); color:var(--accent-ink); padding:11px 20px; font-weight:600}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-secondary{background:var(--surface-2); color:var(--ink); border-color:var(--line); padding:11px 18px}
+.btn-secondary:hover{border-color:var(--accent)}
+.btn-small{background:var(--surface-2); color:var(--ink); border-color:var(--line); padding:7px 13px; font-size:13.5px; font-weight:500}
+.btn-small:hover{border-color:var(--accent); color:var(--accent)}
+input[type=file]{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none}
+
+/* status --------------------------------------------------------------- */
+#status{margin-top:20px}
+.bar{height:4px; background:var(--line); border-radius:99px; overflow:hidden; margin-bottom:12px}
+.bar i{display:block; height:100%; background:var(--accent); width:30%; border-radius:99px;
+  animation:slide 1.1s ease-in-out infinite}
+@keyframes slide{0%{margin-left:-30%}100%{margin-left:100%}}
+@media (prefers-reduced-motion:reduce){.bar i{animation:none; width:100%}}
+.note{font-size:14px; color:var(--muted); font-family:var(--mono)}
+.error{
+  background:color-mix(in srgb, var(--danger) 10%, var(--surface));
+  border:1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border-radius:10px; padding:16px 18px;
+}
+.caution{
+  margin-top:14px; padding:11px 15px; font-size:14.5px; color:var(--muted);
+  background:var(--surface); border:1px solid var(--line);
+  border-left:3px solid var(--warn); border-radius:0 8px 8px 0;
+}
+.error h3{color:var(--danger); margin-bottom:6px}
+.error p{font-size:14.5px; color:var(--ink)}
+.error ul{margin:8px 0 0; padding-left:20px; font-size:14.5px; color:var(--muted)}
+
+/* results -------------------------------------------------------------- */
+section{margin-top:34px}
+.section-head{display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:14px}
+.count{font-family:var(--mono); font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums}
+.files{display:flex; flex-direction:column; gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.file{
+  display:flex; align-items:center; gap:14px; background:var(--surface);
+  padding:13px 16px; flex-wrap:wrap;
+}
+.file.primary{background:var(--surface-2)}
+.swatch{width:9px; height:9px; border-radius:3px; flex:none; background:var(--muted)}
+.file .name{flex:1; min-width:180px; font-weight:500; overflow-wrap:anywhere}
+.file .n{font-family:var(--mono); font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums}
+.caution.standalone{margin:0 0 22px}
+.tip{
+  margin-top:18px; padding:16px 18px; border-radius:10px;
+  background:var(--accent-soft);
+  border:1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.tip-head{font-weight:600; margin-bottom:6px; font-size:15px}
+ol.guide{margin-top:12px; display:flex; flex-direction:column; gap:11px}
+ol.guide li{color:var(--ink)}
+ol.guide strong{font-weight:600}
+ol.guide em{color:var(--muted)}
+.tip p:last-child{font-size:14.5px; color:var(--muted)}
+.all-row{margin:0 0 14px}
+.example .file{opacity:.55}
+.example-tag{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--muted); border:1px solid var(--line); border-radius:99px; padding:3px 9px;
+}
+
+/* next steps / help ---------------------------------------------------- */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px 22px}
+ol.steps{margin:12px 0 0; padding-left:20px; display:flex; flex-direction:column; gap:9px; font-size:15px}
+ol.steps strong{font-weight:600}
+details{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin-top:12px}
+details+details{margin-top:8px}
+summary{cursor:pointer; font-weight:600; font-size:15px}
+summary::marker{color:var(--muted)}
+details[open] summary{margin-bottom:12px}
+details p, details li{font-size:14.5px; color:var(--muted)}
+details p+p{margin-top:10px}
+details ol,details ul{padding-left:20px; margin:10px 0 0; display:flex; flex-direction:column; gap:6px}
+code{font-family:var(--mono); font-size:13px; background:var(--surface-2);
+  border:1px solid var(--line); border-radius:5px; padding:1px 5px; overflow-wrap:anywhere}
+footer{margin-top:40px; padding-top:20px; border-top:1px solid var(--line);
+  font-size:13.5px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; justify-content:space-between}
+[hidden]{display:none !important}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Runs entirely in your browser</p>
+  <h1>iPhone Calendar Rescue</h1>
+  <p class="lede">Lost your calendar? If you have an iPhone backup, your appointments
+  may well still be in it. Drop the file in below and get calendar files you can
+  import anywhere.</p>
+</header>
+
+<div class="privacy">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+  <p><strong>Your calendar never leaves this device.</strong> There is no upload and no
+  server — the file is opened by your own browser and the conversion happens here, on your
+  computer. You can disconnect from the internet after this page loads and it still works.</p>
+</div>
+
+<div class="caution standalone">
+  <strong>Worth a try — but not guaranteed.</strong> A backup is a snapshot of one
+  moment. If it was made <em>before</em> your calendar disappeared, your events should
+  be in there. If it was made <em>after</em>, the loss may already be part of it. Use
+  the <strong>oldest</strong> backup you have, and if one comes up empty, try an older
+  one. <strong>Before making a new backup, copy your existing one somewhere safe</strong> —
+  a new backup can overwrite the very one that still holds your events.
+</div>
+
+<div class="drop" id="drop">
+  <h2>Choose your calendar file</h2>
+  <p class="hint">Drag it here, or pick it below. The file is called
+  <code>Calendar.sqlitedb</code>.</p>
+  <div class="buttons">
+    <button class="btn-primary" id="pickFile">Choose calendar file</button>
+    <button class="btn-secondary" id="pickFolder">Choose a whole backup folder</button>
+  </div>
+  <input type="file" id="fileInput" accept=".sqlitedb,.db,application/x-sqlite3">
+  <input type="file" id="folderInput" webkitdirectory directory multiple>
+</div>
+
+<div id="status" hidden></div>
+
+<section id="results" hidden>
+  <div class="section-head">
+    <h2>Your calendars</h2>
+    <span class="count" id="resultCount"></span>
+  </div>
+  <p class="all-row">
+    <button class="btn-primary" id="downloadAll">Download all calendars (.zip)</button>
+  </p>
+  <div class="files" id="fileList"></div>
+
+  <section>
+    <h2>Getting these onto your iPhone</h2>
+    <div class="card" style="margin-top:14px">
+      <h3>Email the file to yourself — it really is the best way</h3>
+      <ol class="steps">
+        <li><strong>Email one of the files to yourself</strong> as an attachment. Start with
+        a small calendar rather than the combined one.</li>
+        <li><strong>Open that email on your iPhone</strong> and tap the attachment.</li>
+        <li>Tap <strong>Add All</strong>, then pick which calendar to put the events in —
+        make a new one if you can.</li>
+      </ol>
+      <p style="margin-top:14px; font-size:14px; color:var(--muted)">AirDrop and Files
+      usually just preview an .ics file instead of offering to import it. Mail hands it
+      to the Calendar app properly.</p>
+    </div>
+  </section>
+</section>
+
+<section id="intro">
+  <div class="section-head">
+    <h2>What you will get</h2>
+    <span class="example-tag">Example</span>
+  </div>
+  <div class="files example" aria-hidden="true">
+    <div class="file primary"><span class="swatch"></span><span class="name">ALL EVENTS (one file).ics</span><span class="n">5,871 events</span></div>
+    <div class="file"><span class="swatch" style="background:#0088FF"></span><span class="name">Calendar.ics</span><span class="n">4,904 events</span></div>
+    <div class="file"><span class="swatch" style="background:#8295AF"></span><span class="name">Birthdays.ics</span><span class="n">128 events</span></div>
+    <div class="file"><span class="swatch" style="background:#CB30E0"></span><span class="name">School holidays.ics</span><span class="n">50 events</span></div>
+  </div>
+  <p style="font-size:14.5px;color:var(--muted);margin-top:12px">One file per calendar, so
+  birthdays stay separate from work. Titles, notes, locations, reminders, repeating events
+  and all-day events all come across.</p>
+
+  <div class="tip">
+    <p class="tip-head">📧 Putting them back on an iPhone? Email the file to yourself.</p>
+    <p>It sounds primitive, and it is by far the most reliable way. Attach the
+    <code>.ics</code> to an email, open that email <strong>on your iPhone</strong>, tap the
+    attachment, then tap <strong>Add All</strong>. AirDrop and the Files app usually just
+    show a preview instead of offering to import.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Questions</h2>
+
+  <details open>
+    <summary>Where do I find this file? (step by step)</summary>
+    <p>It is inside the backup your computer already made. There are two ways to get
+    it out.</p>
+
+    <p><strong>The quick way —</strong> click <em>Choose a whole backup folder</em> above
+    and pick your backup folder. Nothing is uploaded; your browser reads only the
+    calendar out of it. Backups are <em>usually</em> in one of these places, though they
+    are often moved to an external drive:</p>
+    <ul>
+      <li>Mac: <code>~/Library/Application Support/MobileSync/Backup/</code></li>
+      <li>Windows: <code>C:\Users\you\Apple\MobileSync\Backup</code></li>
+      <li>Windows (older iTunes): <code>C:\Users\you\AppData\Roaming\Apple Computer\MobileSync\Backup</code></li>
+    </ul>
+
+    <p style="margin-top:14px"><strong>The careful way —</strong> export only the
+    calendar file, so nothing else in the backup is ever touched. This also works on
+    <strong>encrypted backups</strong> if you know the password. It uses a free program
+    called <a href="https://github.com/MaxiHuHe04/iTunes-Backup-Explorer" target="_blank"
+    rel="noopener">iTunes Backup Explorer</a>, which runs on
+    <strong>Windows, Mac and Linux</strong>.</p>
+
+    <ol class="guide">
+      <li><strong>Download it.</strong> Open the
+      <a href="https://github.com/MaxiHuHe04/iTunes-Backup-Explorer/releases"
+      target="_blank" rel="noopener">Releases page</a> and take the newest file for your
+      system: <code>_win_x64.msi</code> on Windows, <code>_mac_arm64.dmg</code> on an
+      M1–M4 Mac, <code>_mac_x64.dmg</code> on an older Intel Mac, or
+      <code>_debian_x64.deb</code> on Linux.</li>
+
+      <li><strong>Install it.</strong> On Windows, double-click the <code>.msi</code> and
+      follow the installer. On a Mac, open the <code>.dmg</code> and drag the app into
+      Applications. The Windows and Mac downloads include everything they need.</li>
+
+      <li><strong>Mac only — give it permission.</strong> Skip this on Windows and Linux.
+      Go to <strong>System Settings → Privacy &amp; Security → Full Disk Access</strong>
+      and switch on iTunes Backup Explorer, then quit and reopen it. macOS hides the
+      backup folder from programs until you do.</li>
+
+      <li><strong>Open your backup.</strong> The program lists the backups it finds —
+      click one. If it is encrypted, type the backup password.
+      <br><em>If the list is empty,</em> it just did not find them in the standard place.
+      Open the program's <strong>settings / preferences</strong> and point it at the
+      folder where your backups actually live; they will then appear in the list.</li>
+
+      <li><strong>Search for the calendar.</strong> Go to the <strong>File Search</strong>
+      tab. Put <code>HomeDomain</code> in the <strong>Domain</strong> field, and
+      <code>Library/Calendar/Calendar.sqlitedb%</code> in the <strong>Relative Path</strong>
+      field — the <code>%</code> at the end matters. Click <strong>Search</strong>.</li>
+
+      <li><strong>Export it.</strong> Click <strong>Export matching</strong> and choose a
+      folder. You may get one to three files — <strong>take all of them.</strong> On iOS
+      17.4 and newer your most recent events can live in the <code>-wal</code> file, and
+      exporting only the first one loses them silently.</li>
+
+      <li><strong>Bring it back here</strong> and drop the
+      <code>Calendar.sqlitedb</code> file into the box at the top of this page.</li>
+    </ol>
+  </details>
+
+  <details>
+    <summary>Can I just upload my whole backup?</summary>
+    <p>You can point this page at your backup <em>folder</em> — that stays on your machine.
+    But nothing is ever uploaded anywhere, by design. A full iPhone backup is 5–100 GB
+    spread over tens of thousands of files, and it contains your messages, photos and health
+    data. Sending all of that to a website to read one small calendar file would be a poor
+    trade, so this tool does not offer it.</p>
+  </details>
+
+  <details>
+    <summary>My backup is encrypted</summary>
+    <p>Then the calendar inside it is scrambled, and this page cannot read it. You have two
+    options:</p>
+    <ol>
+      <li>Make a fresh backup with <strong>“Encrypt local backup” switched off</strong>, and
+      use that one.</li>
+      <li>If you know the backup password, use
+      <a href="https://github.com/MaxiHuHe04/iTunes-Backup-Explorer" target="_blank" rel="noopener">iTunes
+      Backup Explorer</a> to unlock the backup and export the calendar file, then bring that
+      file back here.</li>
+    </ol>
+    <p>If the password is lost, there is no way around it — not even Apple can reset it.</p>
+  </details>
+
+  <details>
+    <summary>It says there are no events</summary>
+    <p>Two common reasons.</p>
+    <p><strong>The backup is too new.</strong> If it was made after your calendar
+    disappeared, the empty calendar is what got backed up. Try an older backup if you
+    have one — this is the most common cause, and the reason it is worth keeping old
+    backups rather than overwriting them.</p>
+    <p><strong>The phone used iCloud Calendar.</strong> Then the events live on Apple's
+    servers and were never written into the local backup at all. Sign in at
+    <a href="https://www.icloud.com" target="_blank" rel="noopener">icloud.com</a> and
+    export from there instead.</p>
+  </details>
+
+  <details>
+    <summary>Is this safe to use?</summary>
+    <p>The page is open source and was written with AI assistance — it has been tested on
+    real backups but not exhaustively reviewed by hand. It only ever reads your file; it
+    cannot change or delete anything in your backup.</p>
+    <p>You do not have to take the privacy claim on trust. Open your browser's network tab
+    and watch: after the page loads, nothing is sent. Or disconnect from the internet and
+    convert your file anyway — it still works.</p>
+  </details>
+</section>
+
+<footer>
+  <span>Free and open source · MIT licence</span>
+  <a href="https://github.com/sarahvgls/iphone-calendar-rescue" target="_blank" rel="noopener">Source code &amp; command line version</a>
+</footer>
+</div>
+
+<script src="sql-wasm.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---- iCalendar plumbing ------------------------------------------------
+  var APPLE_EPOCH = Date.UTC(2001, 0, 1);
+  var FREQ = { 1: "DAILY", 2: "WEEKLY", 3: "MONTHLY", 4: "YEARLY" };
+  var PARTSTAT = { 0:"NEEDS-ACTION",1:"ACCEPTED",2:"DECLINED",3:"TENTATIVE",
+                   4:"DELEGATED",5:"ACCEPTED",6:"COMPLETED",7:"IN-PROCESS" };
+
+  function appleTime(sec) {
+    return (sec === null || sec === undefined) ? null : new Date(APPLE_EPOCH + sec * 1000);
+  }
+  function pad(n, len) { return String(n).padStart(len || 2, "0"); }
+  function stamp(d, allDay) {
+    var ymd = pad(d.getUTCFullYear(), 4) + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
+    if (allDay) return ";VALUE=DATE:" + ymd;
+    return ":" + ymd + "T" + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) +
+           pad(d.getUTCSeconds()) + "Z";
+  }
+  function esc(text) {
+    return String(text).replace(/\\/g, "\\\\").replace(/;/g, "\\;")
+      .replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n");
+  }
+  // RFC 5545 says lines are at most 75 octets. Checking byte length per
+  // character is ruinously slow, so ASCII (the common case) takes a fast path.
+  var encoder = new TextEncoder(), decoder = new TextDecoder();
+  function fold(line) {
+    var isAscii = true;
+    for (var i = 0; i < line.length; i++) {
+      if (line.charCodeAt(i) > 127) { isAscii = false; break; }
+    }
+    if (isAscii) {
+      if (line.length <= 75) return line;
+      var out = [], at = 0, limit = 75;
+      while (at < line.length) { out.push(line.slice(at, at + limit)); at += limit; limit = 74; }
+      return out.join("\r\n ");
+    }
+    var bytes = encoder.encode(line);
+    if (bytes.length <= 75) return line;
+    var parts = [], start = 0, max = 75;
+    while (start < bytes.length) {
+      var end = Math.min(start + max, bytes.length);
+      while (end > start && end < bytes.length && (bytes[end] & 0xC0) === 0x80) end--;
+      parts.push(decoder.decode(bytes.subarray(start, end)));
+      start = end; max = 74;
+    }
+    return parts.join("\r\n ");
+  }
+  function duration(seconds) {
+    var sign = seconds < 0 ? "-" : "";
+    seconds = Math.abs(Math.round(seconds));
+    var days = Math.floor(seconds / 86400); seconds -= days * 86400;
+    var hours = Math.floor(seconds / 3600); seconds -= hours * 3600;
+    var mins = Math.floor(seconds / 60); seconds -= mins * 60;
+    var out = sign + "P";
+    if (days) out += days + "D";
+    if (hours || mins || seconds || !days) {
+      out += "T";
+      if (hours) out += hours + "H";
+      if (mins) out += mins + "M";
+      if (seconds || (!hours && !mins)) out += seconds + "S";
+    }
+    return out;
+  }
+
+  // ---- reading the database ---------------------------------------------
+  function groupBy(db, sql, keyColumn) {
+    var map = new Map();
+    var stmt;
+    try { stmt = db.prepare(sql); } catch (e) { return map; }
+    while (stmt.step()) {
+      var row = stmt.getAsObject();
+      var key = row[keyColumn];
+      if (key === null || key === undefined) continue;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(row);
+    }
+    stmt.free();
+    return map;
+  }
+  function lookup(db, sql) {
+    var map = new Map(), stmt;
+    try { stmt = db.prepare(sql); } catch (e) { return map; }
+    while (stmt.step()) { var r = stmt.getAsObject(); map.set(r.id, r); }
+    stmt.free();
+    return map;
+  }
+  function buildRrule(row) {
+    var parts = ["FREQ=" + (FREQ[row.frequency] || "DAILY")];
+    if (row.interval > 1) parts.push("INTERVAL=" + row.interval);
+    if (row.count > 0) parts.push("COUNT=" + row.count);
+    else if (row.end_date) parts.push("UNTIL=" + stamp(appleTime(row.end_date), false).slice(1));
+    String(row.specifier || "").split(";").forEach(function (chunk) {
+      var bits = chunk.split("=");
+      if (bits.length < 2 || !bits[1].trim()) return;
+      var key = bits[0].trim().toUpperCase(), value = bits[1].trim();
+      if (key === "D") {
+        parts.push("BYDAY=" + value.split(",").map(function (d) {
+          return d.charAt(0) === "0" ? d.slice(1) : d;
+        }).join(","));
+      } else if (key === "O") {
+        parts.push("BYMONTH=" + value);
+      }
+    });
+    return parts.join(";");
+  }
+
+  function readCalendars(db) {
+    var locations = lookup(db, "SELECT ROWID AS id, title FROM Location");
+    var identities = lookup(db, "SELECT ROWID AS id, address, display_name FROM Identity");
+    var alarms = groupBy(db,
+      "SELECT calendaritem_owner_id AS owner, trigger_interval FROM Alarm " +
+      "WHERE trigger_interval IS NOT NULL", "owner");
+    var people = groupBy(db,
+      "SELECT owner_id AS owner, email, status, identity_id FROM Participant", "owner");
+    var rules = groupBy(db,
+      "SELECT owner_id AS owner, frequency, interval, count, end_date, specifier " +
+      "FROM Recurrence", "owner");
+    var exceptions = groupBy(db,
+      "SELECT owner_id AS owner, date FROM ExceptionDate", "owner");
+
+    var stmt = db.prepare(
+      "SELECT ci.ROWID AS id, ci.UUID AS uid, ci.summary, ci.description, ci.url," +
+      " ci.start_date, ci.end_date, ci.all_day, ci.location_id, ci.organizer_id," +
+      " ci.has_recurrences, ci.calendar_id, cal.title AS calendar_title, cal.color" +
+      " FROM CalendarItem ci LEFT JOIN Calendar cal ON cal.ROWID = ci.calendar_id" +
+      " WHERE ci.start_date IS NOT NULL ORDER BY ci.start_date");
+
+    var calendars = new Map(), total = 0, ancient = 0;
+    while (stmt.step()) {
+      var row = stmt.getAsObject();
+      var start = appleTime(row.start_date);
+      if (start.getUTCFullYear() < 1900) ancient++;
+
+      var event = {
+        uid: row.uid || ("calendar-rescue-" + row.id),
+        summary: row.summary || "(no title)",
+        description: row.description,
+        url: row.url,
+        allDay: !!row.all_day,
+        start: start,
+        end: appleTime(row.end_date),
+        location: null, organizer: null, rrule: null,
+        exdates: [], alarms: [], attendees: []
+      };
+
+      if (row.location_id && locations.has(row.location_id)) {
+        event.location = locations.get(row.location_id).title || null;
+      }
+      if (row.organizer_id && identities.has(row.organizer_id)) {
+        var address = identities.get(row.organizer_id).address;
+        if (address) event.organizer = address.replace(/^mailto:/i, "");
+      }
+      if (row.has_recurrences && rules.has(row.id)) {
+        event.rrule = buildRrule(rules.get(row.id)[0]);
+        (exceptions.get(row.id) || []).forEach(function (x) {
+          if (x.date !== null) event.exdates.push(appleTime(x.date));
+        });
+      }
+      (alarms.get(row.id) || []).forEach(function (a) {
+        event.alarms.push(a.trigger_interval);
+      });
+      (people.get(row.id) || []).forEach(function (p) {
+        var identity = p.identity_id ? identities.get(p.identity_id) : null;
+        var address = p.email || (identity && identity.address) || "";
+        if (!address) return;
+        event.attendees.push({
+          email: address.replace(/^mailto:/i, ""),
+          name: identity && identity.display_name,
+          partstat: PARTSTAT[p.status] || "NEEDS-ACTION"
+        });
+      });
+
+      var key = row.calendar_id === null ? "__none__" : row.calendar_id;
+      if (!calendars.has(key)) {
+        calendars.set(key, {
+          name: row.calendar_title || "Unsorted",
+          color: row.color || null,
+          events: []
+        });
+      }
+      calendars.get(key).events.push(event);
+      total++;
+    }
+    stmt.free();
+
+    var list = Array.from(calendars.values()).sort(function (a, b) {
+      return b.events.length - a.events.length;
+    });
+    return { calendars: list, total: total, ancient: ancient };
+  }
+
+  // ---- writing .ics ------------------------------------------------------
+  function eventLines(event, now) {
+    var lines = ["BEGIN:VEVENT", "UID:" + esc(event.uid), "DTSTAMP:" + now,
+                 "SUMMARY:" + esc(event.summary),
+                 "DTSTART" + stamp(event.start, event.allDay)];
+    if (event.end) lines.push("DTEND" + stamp(event.end, event.allDay));
+    if (event.description) lines.push("DESCRIPTION:" + esc(event.description));
+    if (event.location) lines.push("LOCATION:" + esc(event.location));
+    if (event.url) lines.push("URL:" + esc(event.url));
+    if (event.organizer) lines.push("ORGANIZER:mailto:" + event.organizer);
+    event.attendees.forEach(function (person) {
+      var line = "ATTENDEE;PARTSTAT=" + person.partstat;
+      if (person.name) line += ';CN="' + String(person.name).replace(/"/g, "'") + '"';
+      lines.push(line + ":mailto:" + person.email);
+    });
+    if (event.rrule) lines.push("RRULE:" + event.rrule);
+    event.exdates.forEach(function (d) { lines.push("EXDATE" + stamp(d, event.allDay)); });
+    event.alarms.forEach(function (offset) {
+      lines.push("BEGIN:VALARM", "ACTION:DISPLAY",
+                 "DESCRIPTION:" + esc(event.summary),
+                 "TRIGGER:" + duration(offset), "END:VALARM");
+    });
+    lines.push("END:VEVENT");
+    return lines;
+  }
+  function buildIcs(name, color, events) {
+    var now = stamp(new Date(), false).slice(1);
+    var lines = ["BEGIN:VCALENDAR", "VERSION:2.0",
+                 "PRODID:-//iPhone Calendar Rescue//EN", "CALSCALE:GREGORIAN",
+                 "METHOD:PUBLISH", "X-WR-CALNAME:" + esc(name)];
+    if (color) lines.push("X-APPLE-CALENDAR-COLOR:" + color);
+    for (var i = 0; i < events.length; i++) {
+      lines.push.apply(lines, eventLines(events[i], now));
+    }
+    lines.push("END:VCALENDAR");
+    for (var j = 0; j < lines.length; j++) lines[j] = fold(lines[j]);
+    return lines.join("\r\n") + "\r\n";
+  }
+  function safeName(name, taken) {
+    var cleaned = String(name || "").replace(/[^\p{L}\p{N} \-_]/gu, "_")
+      .replace(/\s+/g, " ").trim().slice(0, 60) || "Calendar";
+    var candidate = cleaned, n = 2;
+    while (taken.has(candidate.toLowerCase())) { candidate = cleaned + " (" + n++ + ")"; }
+    taken.add(candidate.toLowerCase());
+    return candidate + ".ics";
+  }
+
+  // ---- bundling several files into one .zip ------------------------------
+  // Store-only (no compression): a few hundred lines of deflate would buy
+  // little on text this small, and this keeps the page dependency-free.
+  var crcTable = (function () {
+    var table = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+  function crc32(bytes) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function makeZip(entries) {
+    var enc = new TextEncoder(), local = [], central = [], offset = 0, now = new Date();
+    var time = ((now.getHours() << 11) | (now.getMinutes() << 5) |
+                (now.getSeconds() >> 1)) & 0xFFFF;
+    var date = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) |
+                now.getDate()) & 0xFFFF;
+    entries.forEach(function (entry) {
+      var name = enc.encode(entry.name), data = enc.encode(entry.text), crc = crc32(data);
+      var head = new DataView(new ArrayBuffer(30));
+      head.setUint32(0, 0x04034b50, true); head.setUint16(4, 20, true);
+      head.setUint16(6, 0x0800, true); head.setUint16(8, 0, true);
+      head.setUint16(10, time, true); head.setUint16(12, date, true);
+      head.setUint32(14, crc, true); head.setUint32(18, data.length, true);
+      head.setUint32(22, data.length, true); head.setUint16(26, name.length, true);
+      head.setUint16(28, 0, true);
+      local.push(new Uint8Array(head.buffer), name, data);
+
+      var dir = new DataView(new ArrayBuffer(46));
+      dir.setUint32(0, 0x02014b50, true); dir.setUint16(4, 20, true);
+      dir.setUint16(6, 20, true); dir.setUint16(8, 0x0800, true);
+      dir.setUint16(10, 0, true); dir.setUint16(12, time, true);
+      dir.setUint16(14, date, true); dir.setUint32(16, crc, true);
+      dir.setUint32(20, data.length, true); dir.setUint32(24, data.length, true);
+      dir.setUint16(28, name.length, true); dir.setUint32(38, 0, true);
+      dir.setUint32(42, offset, true);
+      central.push(new Uint8Array(dir.buffer), name);
+      offset += 30 + name.length + data.length;
+    });
+    var centralSize = central.reduce(function (n, part) { return n + part.length; }, 0);
+    var end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true);
+    end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true);
+    end.setUint32(12, centralSize, true); end.setUint32(16, offset, true);
+    return new Blob(local.concat(central, [new Uint8Array(end.buffer)]),
+                    { type: "application/zip" });
+  }
+
+  // ---- the page ----------------------------------------------------------
+  var drop = document.getElementById("drop");
+  var statusBox = document.getElementById("status");
+  var results = document.getElementById("results");
+  var intro = document.getElementById("intro");
+  var fileList = document.getElementById("fileList");
+  var resultCount = document.getElementById("resultCount");
+  var fileInput = document.getElementById("fileInput");
+  var folderInput = document.getElementById("folderInput");
+  var SQL = null, urls = [], made = [], saver = null;
+
+  // On claude.ai the page may not download directly; it asks the viewer
+  // through the host instead. Self-hosted, this simply stays null and the
+  // ordinary download links are used.
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("downloads").then(function (d) {
+      saver = d;
+      if (d && made.length) render();
+    }).catch(function () {});
+  }
+
+  function working(message) {
+    statusBox.hidden = false;
+    statusBox.innerHTML = '<div class="bar"><i></i></div><p class="note"></p>';
+    statusBox.querySelector(".note").textContent = message;
+  }
+  function problem(title, message, bullets) {
+    statusBox.hidden = false;
+    var box = document.createElement("div");
+    box.className = "error";
+    var h = document.createElement("h3"); h.textContent = title; box.appendChild(h);
+    var p = document.createElement("p"); p.textContent = message; box.appendChild(p);
+    if (bullets && bullets.length) {
+      var ul = document.createElement("ul");
+      bullets.forEach(function (b) {
+        var li = document.createElement("li"); li.textContent = b; ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    }
+    statusBox.innerHTML = "";
+    statusBox.appendChild(box);
+  }
+  function clearStatus() { statusBox.hidden = true; statusBox.innerHTML = ""; }
+
+  function addFile(name, text, count, color, primary) {
+    made.push({ name: name, text: text, count: count, color: color, primary: primary });
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    urls.push(url);
+    var link = document.createElement("a");
+    link.href = url; link.download = filename;
+    document.body.appendChild(link); link.click(); link.remove();
+  }
+
+  async function deliver(filename, blob) {
+    if (!saver) { downloadBlob(blob, filename); return; }
+    // The host only accepts a known set of file types, and .ics is not one
+    // of them - so a single calendar travels inside a .zip here.
+    var zipName = filename.replace(/\.ics$/, "") + ".zip";
+    var payload = filename.slice(-4) === ".zip" ? blob
+      : makeZip([{ name: filename, text: await blob.text() }]);
+    try {
+      await saver.save({ filename: filename.slice(-4) === ".zip" ? filename : zipName,
+                         data: payload });
+    } catch (err) {
+      if (err && err.code === "declined") return;
+      problem("That file could not be saved",
+        (err && err.message) || "The download was refused by the browser.", []);
+    }
+  }
+
+  function render() {
+    fileList.innerHTML = "";
+    made.forEach(function (file) {
+      var row = document.createElement("div");
+      row.className = "file" + (file.primary ? " primary" : "");
+
+      var swatch = document.createElement("span");
+      swatch.className = "swatch";
+      if (file.color) swatch.style.background = file.color;
+
+      var label = document.createElement("span");
+      label.className = "name"; label.textContent = file.name;
+
+      var n = document.createElement("span");
+      n.className = "n";
+      n.textContent = file.count.toLocaleString() + (file.count === 1 ? " event" : " events");
+
+      var button = document.createElement("button");
+      button.className = "btn-small"; button.textContent = "Download";
+      button.addEventListener("click", function () {
+        deliver(file.name, new Blob([file.text],
+          { type: "text/calendar;charset=utf-8" }));
+      });
+
+      row.appendChild(swatch); row.appendChild(label);
+      row.appendChild(n); row.appendChild(button);
+      fileList.appendChild(row);
+    });
+  }
+
+  function downloadEverything() {
+    deliver("Rescued Calendars.zip", makeZip(made.map(function (f) {
+      return { name: f.name, text: f.text };
+    })));
+  }
+
+  async function ensureSql() {
+    if (SQL) return SQL;
+    SQL = await initSqlJs({ locateFile: function (f) { return f; } });
+    return SQL;
+  }
+
+  function looksLikeSqlite(bytes) {
+    var magic = "SQLite format 3";
+    for (var i = 0; i < magic.length; i++) {
+      if (bytes[i] !== magic.charCodeAt(i)) return false;
+    }
+    return true;
+  }
+
+  async function convert(bytes, sourceName) {
+    urls.forEach(URL.revokeObjectURL); urls = []; made = [];
+    fileList.innerHTML = "";
+    results.hidden = true;
+
+    if (!looksLikeSqlite(bytes)) {
+      problem("That is not a calendar file",
+        'The file "' + sourceName + '" is not an iPhone calendar database.',
+        ["You are looking for a file called Calendar.sqlitedb.",
+         "If you have your backup folder, use “Choose a whole backup folder” instead."]);
+      return;
+    }
+
+    working("Reading your events…");
+    await new Promise(function (r) { setTimeout(r, 20); });
+
+    var sql = await ensureSql();
+    var db;
+    try { db = new sql.Database(bytes); } catch (e) {
+      problem("That file could not be opened", "It may be damaged or incomplete.", []);
+      return;
+    }
+
+    var data;
+    try { data = readCalendars(db); } catch (e) {
+      db.close();
+      problem("That is a database, but not an iPhone calendar",
+        "It opened, but it does not contain calendar events.",
+        ["You are looking for the file called Calendar.sqlitedb."]);
+      return;
+    }
+    db.close();
+
+    if (!data.total) {
+      problem("No events found",
+        "The calendar was read, but it is empty.",
+        ["This usually means the phone used iCloud Calendar, so the events live " +
+         "online and were never saved into the backup.",
+         "Try exporting from icloud.com instead."]);
+      return;
+    }
+
+    var everything = [];
+    data.calendars.forEach(function (c) { everything = everything.concat(c.events); });
+    addFile("ALL EVENTS (one file).ics", buildIcs("Rescued Calendar", null, everything),
+            everything.length, null, true);
+    var taken = new Set();
+    data.calendars.forEach(function (c) {
+      addFile(safeName(c.name, taken), buildIcs(c.name, c.color, c.events),
+              c.events.length, c.color, false);
+    });
+
+    render();
+    resultCount.textContent = data.total.toLocaleString() + " events · " +
+      data.calendars.length + " calendar" + (data.calendars.length === 1 ? "" : "s");
+    clearStatus();
+    intro.hidden = true;
+    results.hidden = false;
+    if (data.ancient) {
+      var note = document.createElement("p");
+      note.className = "caution";
+      note.textContent = data.ancient + " birthday events have no year stored and will " +
+        "show up in the year 1604. That is how the iPhone saves a birthday without a year.";
+      fileList.parentNode.insertBefore(note, fileList.nextSibling);
+    }
+    results.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function handleFile(file) {
+    working("Opening " + file.name + "…");
+    try {
+      var buffer = await file.arrayBuffer();
+      await convert(new Uint8Array(buffer), file.name);
+    } catch (e) {
+      problem("That file could not be read", String(e && e.message || e), []);
+    }
+  }
+
+  // Picking a whole backup folder: find Manifest.db, look up the calendar,
+  // then read only that one file. Nothing else is touched.
+  async function handleFolder(files) {
+    working("Looking through the backup…");
+    var manifest = null;
+    for (var i = 0; i < files.length; i++) {
+      if (files[i].name === "Manifest.db") { manifest = files[i]; break; }
+    }
+    if (!manifest) {
+      problem("That does not look like an iPhone backup",
+        "A backup folder contains a file called Manifest.db.",
+        ["Pick the folder with a long name made of letters and numbers, " +
+         "not the folder above it."]);
+      return;
+    }
+
+    var sql = await ensureSql();
+    var index, fileId = null;
+    try {
+      index = new sql.Database(new Uint8Array(await manifest.arrayBuffer()));
+      var stmt = index.prepare(
+        "SELECT fileID, relativePath FROM Files WHERE domain = 'HomeDomain' " +
+        "AND relativePath LIKE 'Library/Calendar/Calendar.sqlitedb%'");
+      while (stmt.step()) {
+        var row = stmt.getAsObject();
+        if (String(row.relativePath).endsWith("Calendar.sqlitedb")) fileId = row.fileID;
+      }
+      stmt.free(); index.close();
+    } catch (e) {
+      problem("This backup is encrypted",
+        "Encrypted backups are scrambled, so the calendar cannot be read from here.",
+        ["Make a new backup with “Encrypt local backup” switched off, or",
+         "use iTunes Backup Explorer with your password to export the calendar file."]);
+      return;
+    }
+
+    if (!fileId) {
+      problem("No calendar found in this backup",
+        "The backup does not contain a calendar database.",
+        ["This usually means the phone used iCloud Calendar, so events were " +
+         "never stored on the device itself."]);
+      return;
+    }
+
+    var wanted = fileId.slice(0, 2) + "/" + fileId;
+    for (var j = 0; j < files.length; j++) {
+      var path = files[j].webkitRelativePath || files[j].name;
+      if (path.endsWith(wanted) || files[j].name === fileId) {
+        await handleFile(files[j]);
+        return;
+      }
+    }
+    problem("The calendar file is missing from this backup",
+      "The backup lists a calendar but the file itself is not there.",
+      ["The backup may be incomplete. Try making a fresh one."]);
+  }
+
+  document.getElementById("downloadAll").addEventListener("click", downloadEverything);
+  document.getElementById("pickFile").addEventListener("click", function () { fileInput.click(); });
+  document.getElementById("pickFolder").addEventListener("click", function () { folderInput.click(); });
+  fileInput.addEventListener("change", function () {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+  folderInput.addEventListener("change", function () {
+    if (folderInput.files.length) handleFolder(folderInput.files);
+  });
+  ["dragenter", "dragover"].forEach(function (type) {
+    drop.addEventListener(type, function (e) { e.preventDefault(); drop.classList.add("over"); });
+  });
+  ["dragleave", "drop"].forEach(function (type) {
+    drop.addEventListener(type, function (e) { e.preventDefault(); drop.classList.remove("over"); });
+  });
+  drop.addEventListener("drop", function (e) {
+    e.preventDefault();
+    var dropped = e.dataTransfer && e.dataTransfer.files;
+    if (dropped && dropped.length) handleFile(dropped[0]);
+  });
+})();
+</script>
+</html>

@@ -21,9 +21,13 @@ browser — nothing is uploaded, and there is no server involved.
 
 > ### 👉 https://calendar.example.com
 >
-> <!-- REPLACE the line above with your own address once the page is live.
->      The three files that make up that page, and step-by-step hosting
->      instructions, are in the webapp/ folder of your local copy. -->
+> <!-- REPLACE the line above with your own address once the page is live. -->
+
+The page is open source like everything else here: it is in
+[`webapp/`](webapp/) — one readable HTML file, no build step, nothing minified.
+You can [run it on your own machine](webapp/README.md#try-it-before-you-host-it)
+in one command, or host it on your own domain by following
+[`webapp/README.md`](webapp/README.md).
 
 For most people that is the whole answer, and you can stop reading here. Carry
 on below if you would rather run it on your own computer, if you have thousands
@@ -623,8 +627,15 @@ What that means in practice:
   anything in it. The worst realistic outcome is an incomplete or wrong `.ics`
   file, not a damaged backup.
 - **It is offline.** No network code, no telemetry, no accounts.
-- If you need certainty rather than convenience, read the source — it is one
-  file, written to be readable — or have someone you trust read it.
+- If you need certainty rather than convenience, read the source — the command
+  line tool is one file and the web page is another, both written to be read —
+  or have someone you trust read them.
+- **The web version's privacy claim is checkable, not just stated.** Its whole
+  source is in [`webapp/`](webapp/), it loads nothing from anyone else at
+  runtime, and you can [run it locally](webapp/README.md#try-it-before-you-host-it)
+  and watch your browser's network tab while you convert a file. Nothing is
+  sent. You can also pull the plug on your internet connection and convert a
+  file anyway.
 
 This disclosure is deliberate. Tools like this are increasingly common and
 often do not say so.
