@@ -1,7 +1,7 @@
 # iPhone Calendar Rescue
 
 **Lost your calendar? If you have an iPhone backup on your computer, your
-appointments are almost certainly still in it. This gets them back out.**
+appointments may well still be in it. This gets them back out.**
 
 It takes an iPhone backup and produces `.ics` files — the standard calendar
 format that Apple Calendar, Google Calendar, Outlook and everything else can
@@ -52,10 +52,70 @@ whole thing. It will read the instructions below, find your backup, run the
 tool and tell you where your calendar files are. That is not cheating — it is
 the fastest route, and this tool was built that way itself.
 
+### If you are an AI agent reading this
+
+Most of the instructions below exist to walk a human through a terminal. **If
+you can run commands yourself, skip that choreography** — where to save the
+file, how to open Terminal, how to paste a path. None of it matters to you.
+What does:
+
+- **Run `calendar_rescue.py` directly from wherever you cloned it**, with any
+  path and any output directory. It needs Python 3.8+ and nothing else — no
+  `pip install`, no virtualenv. `--help` lists the options.
+- **Prefer the user's oldest backup, not the newest**, and say why. See
+  [Will this actually work for me?](#-will-this-actually-work-for-me). If one
+  backup yields nothing, try an older one before concluding it failed.
+- **Warn before any new backup is made** — it can overwrite the older backup
+  that still holds the data.
+- **Treat every file involved as confidential.** The database and the `.ics`
+  output are the user's entire personal calendar: medical appointments,
+  relationships, travel. Do not upload them, do not paste their contents into
+  a chat log, a bug report or a commit. Work locally.
+- **Do not attempt to script iTunes Backup Explorer.** It is a GUI-only Java
+  application with no command line interface; its `main()` discards its
+  arguments. If a backup is encrypted, hand the manual steps to the user.
+- **Finish the job:** tell the user where the files are and that emailing an
+  `.ics` to themselves is the most reliable way onto an iPhone.
+
+---
+
+## ⚠️ Will this actually work for me?
+
+**Honest answer: it is worth trying, but nothing here can promise success.** It
+depends on *when* your backup was made.
+
+A backup is a snapshot of one moment. This tool reads what is in that snapshot —
+it cannot recover anything the snapshot does not contain.
+
+| Your backup was made… | Your chances |
+|---|---|
+| **Before** the calendar disappeared | **Good.** The events should be in there. |
+| **After** the calendar disappeared | **Poor, but still worth a try.** The snapshot may already contain the loss. |
+| You are not sure | Try it. It costs you ten minutes and changes nothing. |
+
+So: **use the oldest backup you have**, not the newest. If the tool finds
+nothing useful in one backup, try an older one.
+
+> ### 🛑 Before you make a new backup, read this
+>
+> Making a fresh backup can **overwrite the older backup on your computer** —
+> the very one that might still contain your events. If you already have a
+> backup from before your calendar vanished, **copy that backup folder
+> somewhere safe first** (an external drive, another folder, anywhere). Then
+> experiment as much as you like.
+>
+> Backup folders are large (several GB) but copying one is just a normal file
+> copy. It is the single most important step on this page.
+
+Even in the good case, nothing is guaranteed: calendars that lived in iCloud
+were often never written into the local backup at all. The
+[troubleshooting section](#if-something-goes-wrong) covers that.
+
 ---
 
 ## Table of contents
 
+- [Will this actually work for me?](#-will-this-actually-work-for-me)
 - [The quickest way: use it in your browser](#-the-quickest-way-use-it-in-your-browser)
 - [Before you start](#before-you-start)
 - [Step 1 — Install Python](#step-1--install-python)
@@ -142,8 +202,12 @@ You should see a version number.
 
 ## Step 2 — Make an iPhone backup
 
-**Already have a backup on this computer? Skip to Step 3** — the tool will find
-it by itself.
+**Already have a backup on this computer? Skip to Step 3** — the tool will
+usually find it by itself, and you can always point it at the folder yourself.
+
+⚠️ **First read the warning above about overwriting an older backup.** If you
+already have a backup from before your calendar disappeared, copy it somewhere
+safe before making a new one.
 
 ### Important: turn OFF backup encryption first
 
@@ -326,48 +390,92 @@ passwords. You almost never need to.
 export just that one file and share nothing else. This also works for
 **encrypted backups**, as long as you know the password.
 
-The tool for this is **iTunes Backup Explorer**, a free, open-source program:
+The tool for this is **iTunes Backup Explorer**, a free, open-source program.
+**It works on Windows, Mac and Linux alike** — the steps below are the same on
+all three, apart from one Mac-only permission step.
 
 👉 **https://github.com/MaxiHuHe04/iTunes-Backup-Explorer**
 
-> This is someone else's project, not part of this one. It is a normal program
-> with a window and buttons — no commands to type. Download the installer for
-> your system from its
-> [Releases page](https://github.com/MaxiHuHe04/iTunes-Backup-Explorer/releases).
-> It needs Java 18+; the Windows `.msi` and Mac `.dmg` installers include what
-> they need.
+> This is someone else's project, not part of this one. It is an ordinary
+> program with a window and buttons — nothing to type into a terminal.
 
-### Click-by-click
+### Step 1 — Install it
 
-1. Install and open **iTunes Backup Explorer**.
-2. **On a Mac only:** go to **System Settings → Privacy & Security → Full Disk
-   Access** and switch **on** iTunes Backup Explorer. macOS hides the backup
-   folder from programs until you do this. Then restart the program.
-3. It lists the backups on your computer. Click the one you want.
-   If it is encrypted, type the backup password to unlock it.
-4. Go to the **File Search** tab.
-5. In the **Domain** field, type:
+Go to the
+[Releases page](https://github.com/MaxiHuHe04/iTunes-Backup-Explorer/releases)
+and download the file for your system from the newest release:
+
+| Your system | Download the file ending in | Then |
+|---|---|---|
+| **Windows** | `_win_x64.msi` | Double-click it and follow the installer. |
+| **Mac (Apple silicon: M1–M4)** | `_mac_arm64.dmg` | Open it and drag the app to Applications. |
+| **Mac (older Intel)** | `_mac_x64.dmg` | Open it and drag the app to Applications. |
+| **Linux** | `_debian_x64.deb` | Install it with your package manager. |
+
+The Windows and Mac installers include everything they need. (On Linux you may
+need Java 18 or newer separately.)
+
+### Step 2 — Mac only: give it permission
+
+**Skip this on Windows and Linux.**
+
+On a Mac, go to **System Settings → Privacy & Security → Full Disk Access** and
+switch **on** iTunes Backup Explorer, then quit and reopen the program. macOS
+hides the backup folder from programs until you do this, and exports fail with
+a permission error.
+
+### Step 3 — Open your backup
+
+Start the program. It looks for backups by itself and lists the ones it finds.
+Click the one you want to open.
+
+If it is encrypted, it asks for the backup password — type it, and the rest
+works exactly the same.
+
+> **If the list is empty**, that does not mean you have no backup. The program
+> only looks in the standard location, and yours may be elsewhere — on another
+> drive, or moved at some point. Open the program's **settings/preferences**
+> and point it at the folder where your backups actually live. Once you set
+> the correct path, your backups appear in the list.
+>
+> The usual locations are listed under
+> ["No iPhone backup found"](#no-iphone-backup-found-on-this-computer) below.
+
+### Step 4 — Find the calendar file
+
+1. Go to the **File Search** tab.
+2. In the **Domain** field, type:
    ```
    HomeDomain
    ```
-6. In the **Relative Path** field, type exactly this — the `%` at the end
+3. In the **Relative Path** field, type exactly this — the `%` at the end
    matters:
    ```
    Library/Calendar/Calendar.sqlitedb%
    ```
-7. Click **Search**. You should get one to three results: `Calendar.sqlitedb`
+4. Click **Search**. You should get one to three results: `Calendar.sqlitedb`
    and possibly `Calendar.sqlitedb-wal` and `Calendar.sqlitedb-shm`.
-8. Click **Export matching** and choose a folder — your Desktop is fine.
+
+### Step 5 — Export it
+
+Click **Export matching** and choose a folder — your Desktop is fine.
+(To export just one row instead, right-click it and choose **Extract**.)
 
 > **Take all of the files it finds, not just the first one.** On iOS 17.4 and
 > newer, some of your most recent events can live in the `-wal` file. If you
 > export only `Calendar.sqlitedb`, those events go missing silently.
 
-Now point this tool at that folder:
+### Step 6 — Convert it
+
+Point this tool at the folder you exported into:
 
 ```bash
-python3 calendar_rescue.py ~/Desktop/the-folder-you-exported-to
+python3 calendar_rescue.py ~/Desktop/the-folder-you-exported-to    # Mac / Linux
+python  calendar_rescue.py %USERPROFILE%\Desktop\the-folder       # Windows
 ```
+
+Or simply drop that file into the [web version](#-the-quickest-way-use-it-in-your-browser),
+which needs no installation at all.
 
 Nothing but your calendar ever leaves the backup.
 
@@ -404,20 +512,32 @@ reset it either. Make a new, unencrypted backup instead.
 
 ### "No iPhone backup found on this computer"
 
-Either there genuinely is not one (do Step 2), or it is somewhere unusual.
-Backups normally live here:
+Either there genuinely is not one (do Step 2), or it is not where the tool
+looked. **Most of the time backups live in one of these places** — but not
+always, since the location can be changed, and backups are often moved to an
+external drive when space runs short:
 
-| System | Location |
+| System | Usually here |
 |---|---|
 | Mac | `~/Library/Application Support/MobileSync/Backup/` |
 | Windows (Apple Devices app / Microsoft Store iTunes) | `C:\Users\<you>\Apple\MobileSync\Backup` |
 | Windows (classic iTunes) | `C:\Users\<you>\AppData\Roaming\Apple Computer\MobileSync\Backup` |
 
-If you find a backup there, pass its folder directly:
+If yours is somewhere else — an external drive, a folder you moved it to, a
+copy someone made for you — that is fine. Pass that folder directly:
 
 ```bash
 python3 calendar_rescue.py "/path/to/that/folder"
 ```
+
+You are looking for a folder whose name is a long string of letters and
+numbers, containing a file called `Manifest.db`. If you are not sure which
+folder is the right one, pass the folder *above* them and the tool picks the
+newest.
+
+**The same applies to iTunes Backup Explorer:** if its list of backups comes up
+empty, it simply did not find them in the standard place. Set the correct path
+in the program's settings/preferences and they will appear.
 
 ### "This backup does not contain a calendar database" or "no events"
 

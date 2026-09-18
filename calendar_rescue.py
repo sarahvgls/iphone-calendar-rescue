@@ -269,16 +269,24 @@ def resolve_input(given, workdir):
         backups = find_backups()
         if not backups:
             die(
-                "No iPhone backup found on this computer.",
-                "Make a backup first (Finder on Mac, iTunes or Apple Devices on"
-                " Windows), then run this again.",
-                "Or drag your Calendar.sqlitedb file onto this script.",
+                "No iPhone backup found in the usual place on this computer.",
+                "Backups are usually in one of these folders - but not always,"
+                " they are often moved to an external drive:",
+                "   Mac:     ~/Library/Application Support/MobileSync/Backup/",
+                "   Windows: C:\\Users\\<you>\\Apple\\MobileSync\\Backup",
+                "   Windows: C:\\Users\\<you>\\AppData\\Roaming\\Apple"
+                " Computer\\MobileSync\\Backup",
+                "If yours is somewhere else, pass that folder to this script.",
+                "No backup yet? Make one - but copy any older backup somewhere"
+                " safe first, because a new backup can overwrite it.",
             )
         chosen = backups[0]
         say(f"  using your most recent backup: {backup_label(chosen)}")
         if len(backups) > 1:
-            say(f"  ({len(backups) - 1} older backup(s) ignored - pass a folder"
-                f" path to pick a different one)")
+            say(f"  {len(backups) - 1} older backup(s) are also here. If events"
+                f" are missing, try an older one - pass its folder path:")
+            for older in backups[1:4]:
+                say(f"     {older}")
         return extract_from_backup(chosen, workdir)
 
     given = os.path.expanduser(given)
@@ -700,8 +708,10 @@ def main(argv=None):
     total = sum(len(c["events"]) for c in calendars)
     if total == 0:
         die("The calendar database was read, but it contains no events.",
-            "If the phone used iCloud Calendar, events may live online only.",
-            "Sign in at icloud.com and export from there instead.")
+            "If this backup was made AFTER your calendar disappeared, the loss"
+            " is already part of it. Try an older backup if you have one.",
+            "If the phone used iCloud Calendar, the events may live online"
+            " only. Sign in at icloud.com and export from there instead.")
     say(f"  {total} events in {len(calendars)} calendar(s)")
 
     if args.skip:
