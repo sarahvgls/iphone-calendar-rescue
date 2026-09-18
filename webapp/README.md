@@ -5,10 +5,16 @@ no database, no backend, no Python. The conversion happens inside the visitor's
 own browser.
 
 ```
-index.html      the page (the whole tool, ~34 KB)
+index.html      the page (the whole tool)
 sql-wasm.js     SQLite compiled for the browser  ) sql.js 1.14.2
 sql-wasm.wasm   the SQLite engine itself         ) MIT licence
+fonts/          the three typefaces               ) SIL OFL 1.1
 ```
+
+**The page loads nothing from anyone else at runtime** — no CDN, no Google
+Fonts, no analytics. Everything it needs is in this folder. That is what makes
+"your file never leaves your device" true of the whole page and not just of the
+calendar data.
 
 **The source is in the repository on purpose.** This page asks people to hand
 it their entire personal calendar, so the least it can do is let them read
@@ -157,10 +163,14 @@ Two things to keep it that way:
 1. **Do not add analytics or error reporting.** The moment a script reports
    filenames or file contents back to you, the "nothing leaves your device"
    claim stops being true and the GDPR obligations return.
-2. **Keep the sql.js files local** (as they are here) rather than loading them
-   from a CDN. Loading them from a third party transmits your visitors' IP
-   addresses to that third party, which needs a legal basis and typically a
-   cookie/tracking notice under **§ 25 TDDDG**.
+2. **Keep the sql.js files and the fonts local** (as they are here) rather than
+   loading them from a CDN. Loading anything from a third party transmits your
+   visitors' IP addresses to that third party, which needs a legal basis and
+   typically a notice under **§ 25 TDDDG**. This is not hypothetical for fonts:
+   the Landgericht München ruled in January 2022 that embedding Google Fonts
+   dynamically violates the GDPR, and a wave of Abmahnungen followed. The page
+   ships its own fonts for exactly this reason — see
+   [`fonts/README.md`](fonts/README.md).
 
 ---
 

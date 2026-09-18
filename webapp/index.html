@@ -5,10 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>iPhone Calendar Rescue</title>
 <meta name="description" content="Recover the calendar from an iPhone backup, entirely inside your own browser.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+/* Fonts are served from this folder, not from Google. Loading them from
+   Google would send every visitor's IP address to a third party - which
+   this page has no business doing, and which German courts have had
+   plenty to say about. See fonts/README.md. */
+@font-face{font-family:"Fraunces";src:url("fonts/fraunces.woff2")format("woff2");
+  font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Fraunces";src:url("fonts/fraunces.woff2")format("woff2");
+  font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"Public Sans";src:url("fonts/public-sans.woff2")format("woff2");
+  font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Public Sans";src:url("fonts/public-sans.woff2")format("woff2");
+  font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Public Sans";src:url("fonts/public-sans.woff2")format("woff2");
+  font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("fonts/ibm-plex-mono-400.woff2")format("woff2");
+  font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("fonts/ibm-plex-mono-500.woff2")format("woff2");
+  font-weight:500;font-style:normal;font-display:swap}
+
 :root{
   --ground:#EEF3F4; --surface:#FFFFFF; --surface-2:#F6FAFA;
   --ink:#101A1D; --muted:#56696F; --line:#D2DEE0;
