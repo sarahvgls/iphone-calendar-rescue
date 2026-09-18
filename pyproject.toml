@@ -1,16 +1,26 @@
-[tool.poetry]
-name = "calendarsave"
-version = "0.1.0"
-description = ""
-authors = ["Sarah Vogels <114360057+sarahvgls@users.noreply.github.com>"]
+[project]
+name = "iphone-calendar-rescue"
+version = "1.0.0"
+description = "Turn an iPhone backup into .ics calendar files you can import anywhere."
 readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Sarah Vogels" }]
+keywords = ["iphone", "ios", "backup", "calendar", "ics", "icalendar", "sqlitedb"]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-ics = "^0.7.2"
-pytz = "^2025.2"
+# No dependencies on purpose: the tool runs on a plain Python install.
+dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/sarahvgls/iphone-calendar-rescue"
+Issues = "https://github.com/sarahvgls/iphone-calendar-rescue/issues"
+
+[project.scripts]
+calendar-rescue = "calendar_rescue:main"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["calendar_rescue"]
