@@ -13,6 +13,25 @@ one file path. That is the whole job.
 
 ---
 
+## ⚡ The quickest way: use it in your browser
+
+**There is a web version that needs no installation at all.** You open a page,
+choose your file, and download your calendars. It runs entirely inside your own
+browser — nothing is uploaded, and there is no server involved.
+
+> ### 👉 https://calendar.example.com
+>
+> <!-- REPLACE the line above with your own address once the page is live.
+>      The three files that make up that page, and step-by-step hosting
+>      instructions, are in the webapp/ folder of your local copy. -->
+
+For most people that is the whole answer, and you can stop reading here. Carry
+on below if you would rather run it on your own computer, if you have thousands
+of events and want the command line version, or if you want to see exactly what
+it does.
+
+---
+
 ## 🤖 A note for human readers
 
 **If reading instructions is not your idea of a good time, hand this problem to
@@ -37,6 +56,7 @@ the fastest route, and this tool was built that way itself.
 
 ## Table of contents
 
+- [The quickest way: use it in your browser](#-the-quickest-way-use-it-in-your-browser)
 - [Before you start](#before-you-start)
 - [Step 1 — Install Python](#step-1--install-python)
 - [Step 2 — Make an iPhone backup](#step-2--make-an-iphone-backup)
