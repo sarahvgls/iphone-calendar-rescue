@@ -1,0 +1,47 @@
+# =====================================================================
+#  PRIVATE DATA — never commit
+#  Everything in private/ is personal calendar data and stays local.
+# =====================================================================
+private/
+
+# Calendar databases extracted from a backup (personal data)
+*.sqlitedb
+*.sqlitedb-wal
+*.sqlitedb-shm
+*.sqlite
+
+# Generated calendar exports (personal data)
+*.ics
+*.csv
+calendars/
+*_export/
+
+# Optional web version — not part of this tool
+webapp/
+
+# =====================================================================
+#  Python
+# =====================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =====================================================================
+#  Editors / OS
+# =====================================================================
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
